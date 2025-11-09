@@ -16,14 +16,14 @@ export default function Dashboard() {
 
         const prompt = `
 You are a senior software engineer reviewing the following code.
-Give a short, clear review covering:
+Give short, clear feedback covering:
 1. Major logic or syntax issues
 2. Readability or structure improvements
 3. Optimization suggestions
 
-Then provide a clean, corrected version of the code below labeled as:
+Then provide a clean corrected version labeled as:
 Updated Code:
-(Do not include explanations, markdown, or styling)
+(Do not use markdown, headings, or bold formatting.)
 
 Code:
 ${code}
@@ -42,10 +42,17 @@ ${code}
             );
 
             const data = await res.json();
-            const text =
-                data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response received from AI.";
+            let text =
+                data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+                "No response received from AI.";
 
-            // Split feedback and updated code if present
+            // Decode escaped characters
+            text = text
+                .replace(/\\u003c/g, "<")
+                .replace(/\\u003e/g, ">")
+                .replace(/\\n/g, "\n");
+
+            // Split feedback and updated code
             const [feedbackPart, codePart] = text.split("Updated Code:");
             setAiFeedback(feedbackPart?.trim() || "No feedback found.");
             setAiSuggestedCode(codePart?.trim() || "");
@@ -54,6 +61,10 @@ ${code}
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleUseSuggested = () => {
+        if (aiSuggestedCode) setCode(aiSuggestedCode);
     };
 
     const handleSubmit = () => {
@@ -212,7 +223,54 @@ ${code}
                             {aiFeedback}
                         </pre>
 
-                     
+                        {aiSuggestedCode && (
+                            <>
+                                <h3
+                                    style={{
+                                        fontSize: "16px",
+                                        fontWeight: 600,
+                                        color: "#111827",
+                                        marginTop: "16px",
+                                        marginBottom: "6px",
+                                    }}
+                                >
+                                    Suggested Code
+                                </h3>
+                                <pre
+                                    style={{
+                                        whiteSpace: "pre-wrap",
+                                        fontSize: "14px",
+                                        color: "#1f2937",
+                                        background: "#f3f4f6",
+                                        borderRadius: "8px",
+                                        padding: "12px",
+                                        border: "1px solid #e5e7eb",
+                                        marginBottom: "10px",
+                                    }}
+                                >
+                                    {aiSuggestedCode}
+                                </pre>
+                                <button
+                                    onClick={handleUseSuggested}
+                                    style={{
+                                        backgroundColor: "#e5e7eb",
+                                        color: "#111827",
+                                        border: "none",
+                                        borderRadius: "6px",
+                                        padding: "6px 12px",
+                                        cursor: "pointer",
+                                    }}
+                                    onMouseOver={(e) =>
+                                        (e.currentTarget.style.backgroundColor = "#d1d5db")
+                                    }
+                                    onMouseOut={(e) =>
+                                        (e.currentTarget.style.backgroundColor = "#e5e7eb")
+                                    }
+                                >
+                                    Use Suggested Code
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
             </div>
